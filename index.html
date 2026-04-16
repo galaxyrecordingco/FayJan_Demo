@@ -73,6 +73,30 @@
   .nav-cta:hover { background: var(--orange-bright) !important; }
   .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 4px; }
   .hamburger span { display: block; width: 24px; height: 2px; background: var(--light); border-radius: 2px; transition: 0.3s; }
+  /* Smart cart pill + account icon in nav */
+  .nav-account-row { display: flex; align-items: center; gap: 10px; }
+  .nav-acct-btn {
+    display: flex; align-items: center; gap: 7px;
+    font-family: 'Barlow Condensed', sans-serif; font-size: 0.85rem; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--silver); text-decoration: none;
+    padding: 7px 14px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--steel-mid); transition: all 0.2s;
+  }
+  .nav-acct-btn:hover { color: var(--white); border-color: var(--orange); background: var(--orange-glow); }
+  .nav-acct-btn.signed-in { color: var(--orange); border-color: rgba(232,87,10,0.3); }
+  .nav-cart-pill {
+    display: none; align-items: center; gap: 7px;
+    font-family: 'Barlow Condensed', sans-serif; font-size: 0.85rem; font-weight: 700;
+    letter-spacing: 0.06em; color: var(--white);
+    text-decoration: none; padding: 7px 14px;
+    border-radius: 6px; border: 1px solid rgba(232,87,10,0.4);
+    background: var(--orange-glow); transition: all 0.2s; position: relative;
+    animation: cartAppear 0.4s ease;
+  }
+  .nav-cart-pill:hover { background: var(--orange); border-color: var(--orange); }
+  .nav-cart-cnt { background: var(--orange); color: #fff; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 800; }
+  @keyframes cartAppear { from { opacity:0; transform:scale(0.8) translateY(-4px); } to { opacity:1; transform:scale(1) translateY(0); } }
 
   /* ─── HERO ─── */
   #home {
@@ -540,13 +564,25 @@
   <div class="hamburger" onclick="toggleMenu()" aria-label="Toggle menu">
     <span></span><span></span><span></span>
   </div>
-  <ul class="nav-links" id="navLinks">
-    <li><a href="#home" class="active">Home</a></li>
-    <li><a href="#about">About</a></li>
-    <li><a href="#products">Products</a></li>
-    <li><a href="#locations">Locations</a></li>
-    <li><a href="#contact" class="nav-cta">Get a Quote</a></li>
-  </ul>
+  <div class="nav-account-row">
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#home" class="active">Home</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="#products">Products</a></li>
+      <li><a href="#locations">Locations</a></li>
+      <li><a href="#contact" class="nav-cta">Get a Quote</a></li>
+    </ul>
+    <!-- Smart cart pill — only shown when cart has items -->
+    <a href="shop.html" class="nav-cart-pill" id="mainCartPill" title="View Cart">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+      Cart <span class="nav-cart-cnt" id="mainCartCnt">0</span>
+    </a>
+    <!-- Account icon -->
+    <a href="account.html" class="nav-acct-btn" id="mainAcctBtn">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span id="mainAcctLabel">Sign In</span>
+    </a>
+  </div>
 </nav>
 
 <!-- HERO -->
@@ -1457,6 +1493,35 @@
 </footer>
 
 <script>
+  // ── SMART CART PILL & ACCOUNT (main site) ──────────────────────
+  function syncMainNav() {
+    // Cart pill
+    try {
+      const cart = JSON.parse(localStorage.getItem('fj_cart') || '[]');
+      const n = cart.reduce((a,b) => a + b.qty, 0);
+      const pill = document.getElementById('mainCartPill');
+      const cnt  = document.getElementById('mainCartCnt');
+      if (pill) { pill.style.display = n > 0 ? 'flex' : 'none'; if(cnt) cnt.textContent = n; }
+    } catch(e) {}
+    // Account label
+    try {
+      const sess = JSON.parse(localStorage.getItem('fj_session') || 'null');
+      const btn  = document.getElementById('mainAcctBtn');
+      const lbl  = document.getElementById('mainAcctLabel');
+      if (btn && sess && sess.email) {
+        const users = JSON.parse(localStorage.getItem('fj_users') || '{}');
+        const user  = users[sess.email];
+        if (user) {
+          lbl.textContent = user.firstName;
+          btn.classList.add('signed-in');
+        }
+      }
+    } catch(e) {}
+  }
+  syncMainNav();
+  // Re-check if cart changes in another tab
+  window.addEventListener('storage', syncMainNav);
+
   // Nav active state on scroll
   const sections = document.querySelectorAll('section[id], #home');
   const navLinks = document.querySelectorAll('.nav-links a');
